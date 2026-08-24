@@ -1,24 +1,32 @@
-// src/hooks/useTrips.js
+// client/src/hooks/useTrips.js
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api/axiosConfig';
 
-export function useTrips() {
-  const [trips, setTrips] = useState([]); // ✅ Siempre un array
+export const useTrips = (periodo = 'hoy') => {
+  const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    axios.get('/api/trips')
-      .then(res => {
-        // ✅ Si la respuesta no es un array, usa un array vacío
-        setTrips(Array.isArray(res.data) ? res.data : []);
+    const fetchTrips = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get('/trips', {
+          params: { periodo } // enviar filtro al backend
+        });
+        setTrips(response.data.trips);
+        setError(null);
+      } catch (err) {
+        setError(err.response?.data?.message || 'Error al cargar viajes');
+        // En caso de error, puedes optar por usar MOCK_TRIPS como fallback
+        setTrips([]);
+      } finally {
         setLoading(false);
-      })
-      .catch(err => {
-        console.error('Error al cargar viajes:', err);
-        setTrips([]); // ✅ En caso de error, array vacío
-        setLoading(false);
-      });
-  }, []);
+      }
+    };
 
-  return { trips, loading };
-}
+    fetchTrips();
+  }, [periodo]); // se ejecuta cada vez que cambia el período
+
+  return { trips, loading, error };
+};

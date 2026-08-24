@@ -1,3 +1,4 @@
+import { useAuth } from '../../context/AuthContext';
 import { useState, useMemo } from 'react';
 import { useTrips } from '../../hooks/useTrips';
 import {
@@ -32,6 +33,7 @@ const MOCK_GASTOS = [
 const COLORS = ['#4ade80', '#60a5fa', '#fbbf24'];
 
 export default function Dashboard() {
+  const { user } = useAuth();
   // 1️⃣ Obtener viajes desde la API
   const { trips, loading } = useTrips();
 
@@ -77,7 +79,7 @@ export default function Dashboard() {
           </div>
           <div className={styles.conductorStatus}>
             <span className={`${styles.statusDot} ${styles.online}`}></span>
-            <span className={styles.statusText}>Carlos Rodríguez</span>
+            <span className={styles.statusText}>{user?.name || 'Conductor'}</span>
             <span className={styles.statusBadge}>Online</span>
           </div>
         </div>
