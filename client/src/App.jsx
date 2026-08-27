@@ -1,43 +1,49 @@
-// src/App.jsx
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
-import PrivateRoute from './components/PrivateRoute';
-import Dashboard from './pages/Dashboard/Dashboard';
-import Register from './pages/Register/Register';
-import Login from './pages/Login/Login';
-import ForgotPassword from './pages/ForgotPassword/ForgotPassword';
-import ResetPassword from './pages/ResetPassword/ResetPassword';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './context/AuthProvider';  
+import { useAuth } from './hooks/useAuth';            
+import Login from './pages/Auth/Login/Login';
+import Register from './pages/Auth/Register/Register';
 import Profile from './pages/Profile/Profile';
+import ForgotPassword from './pages/Auth/ForgotPassword/ForgotPassword';
+import ResetPassword from './pages/Auth/ResetPassword/ResetPassword';
+import Dashboard from './pages/Dashboard/Dashboard';
+
+const ProtectedRoute = ({ children }) => {
+  const { user, loading } = useAuth(); // ✅ ahora usa el hook correcto
+  if (loading) return <div>Cargando...</div>;
+  if (!user) return <Navigate to="/login" />;
+  return children;
+};
 
 function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
+    <AuthProvider>
+      <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Login />} />  {/* o un landing */}
-          <Route
-            path="/dashboard"
-            element={
-              <PrivateRoute>
-                <Dashboard />
-              </PrivateRoute>
-            }
-          />
-          <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
           <Route
-            path="/profile"
+            path="/dashboard"
             element={
-              <PrivateRoute>
-                <Profile />
-              </PrivateRoute>
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
             }
           />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="*" element={<Navigate to="/login" />} />
         </Routes>
-      </AuthProvider>
-    </BrowserRouter>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 

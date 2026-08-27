@@ -1,72 +1,52 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../../hooks/useAuth';
-import styles from './Register.module.css';
+import styles from './ResetPassword.module.css';
 
-export default function Register() {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+export default function ResetPassword() {
+  const { token } = useParams();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
-  const { register } = useAuth();
+  const { resetPassword } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setMessage('');
     if (password !== confirmPassword) {
       setError('Las contraseñas no coinciden');
       return;
     }
+    if (password.length < 6) {
+      setError('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
     setLoading(true);
     try {
-      await register(name, email, password);
-      navigate('/dashboard');
+      await resetPassword(token, password);
+      setMessage('Contraseña actualizada correctamente');
+      setTimeout(() => navigate('/dashboard'), 2000);
     } catch (err) {
-      setError(err.response?.data?.message || 'Error al registrarse');
+      setError(err.response?.data?.message || 'Error al restablecer la contraseña');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className={styles.registerContainer}>
-      <div className={styles.registerCard}>
-        <div className={styles.header}>
-          <h1>🚗 Driver Control Pro</h1>
-          <p>Crea tu cuenta</p>
-        </div>
+    <div className={styles.container}>
+      <div className={styles.card}>
+        <h1>Nueva contraseña</h1>
+        <p>Ingresa tu nueva contraseña.</p>
 
+        {message && <div className={styles.success}>{message}</div>}
         {error && <div className={styles.error}>{error}</div>}
 
         <form onSubmit={handleSubmit} className={styles.form}>
-          <div className={styles.formGroup}>
-            <label htmlFor="name">Nombre completo</label>
-            <input
-              type="text"
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              placeholder="Tu nombre"
-              autoFocus
-            />
-          </div>
-
-          <div className={styles.formGroup}>
-            <label htmlFor="email">Correo electrónico</label>
-            <input
-              type="email"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              placeholder="correo@ejemplo.com"
-            />
-          </div>
-
           <div className={styles.formGroup}>
             <label htmlFor="password">Contraseña</label>
             <input
@@ -87,19 +67,17 @@ export default function Register() {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
-              placeholder="Repite tu contraseña"
+              placeholder="Repite la contraseña"
             />
           </div>
 
           <button type="submit" className={styles.submitBtn} disabled={loading}>
-            {loading ? 'Registrando...' : 'Registrarse'}
+            {loading ? 'Actualizando...' : 'Actualizar contraseña'}
           </button>
         </form>
 
         <div className={styles.footer}>
-          <p>
-            ¿Ya tienes cuenta? <Link to="/login">Inicia sesión</Link>
-          </p>
+          <Link to="/login">Volver al inicio de sesión</Link>
         </div>
       </div>
     </div>

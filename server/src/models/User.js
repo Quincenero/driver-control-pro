@@ -34,37 +34,32 @@ const userSchema = new mongoose.Schema({
   birthDate: {
     type: Date,
   },
-  // Campos adicionales que puedas necesitar
   vehicleModel: String,
   vehiclePlate: String,
-  // ...
   resetPasswordToken: String,
   resetPasswordExpire: Date,
 }, {
   timestamps: true,
 });
 
-// 🔐 Hash de contraseña antes de guardar
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
+// ✅ SIN "next" Y SIN "function" – solo async
+userSchema.pre('save', async function () {
+  if (!this.isModified('password')) return;
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
-  next();
 });
 
-// 📝 Método para comparar contraseñas
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-// 🎟️ Generar token de reseteo
 userSchema.methods.getResetPasswordToken = function () {
   const resetToken = crypto.randomBytes(20).toString('hex');
   this.resetPasswordToken = crypto
     .createHash('sha256')
     .update(resetToken)
     .digest('hex');
-  this.resetPasswordExpire = Date.now() + 10 * 60 * 1000; // 10 minutos
+  this.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
   return resetToken;
 };
 

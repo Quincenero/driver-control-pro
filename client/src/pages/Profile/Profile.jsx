@@ -1,16 +1,33 @@
-// src/pages/Profile/Profile.jsx
-import { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useState, useEffect, useRef } from 'react';
+import { useAuth } from '../../hooks/useAuth';
 import styles from './Profile.module.css';
 
-const Profile = () => {
+export default function Profile() {
   const { user, updateProfile, logout } = useAuth();
   const [formData, setFormData] = useState({
-    lastName: user?.lastName || '',
-    phone: user?.phone || '',
-    birthDate: user?.birthDate || '',
+    lastName: '',
+    phone: '',
+    birthDate: '',
+    vehicleModel: '',
+    vehiclePlate: '',
   });
   const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const prevUserRef = useRef(user);
+
+  useEffect(() => {
+    if (user && user !== prevUserRef.current) {
+      setFormData({
+        lastName: user.lastName || '',
+        phone: user.phone || '',
+        birthDate: user.birthDate ? user.birthDate.split('T')[0] : '',
+        vehicleModel: user.vehicleModel || '',
+        vehiclePlate: user.vehiclePlate || '',
+      });
+      prevUserRef.current = user;
+    }
+  }, [user]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -18,56 +35,104 @@ const Profile = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const result = await updateProfile(formData);
-    setMessage(result.success ? 'Perfil actualizado ✅' : result.message);
+    setError('');
+    setMessage('');
+    setLoading(true);
+    try {
+      await updateProfile(formData);
+      setMessage('Perfil actualizado correctamente');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Error al actualizar perfil');
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!user) return <div>Cargando...</div>;
 
   return (
-    <div className={styles.container}>
+    <div className={styles.profileContainer}>
       <div className={styles.profileCard}>
-        <h2>Mi Perfil</h2>
-        <p><strong>Usuario:</strong> {user.name}</p>
-        <p><strong>Email:</strong> {user.email}</p>
-        <hr />
-        <form onSubmit={handleSubmit}>
-          <div className={styles.inputGroup}>
-            <label>Apellido</label>
+        <h1>Mi Perfil</h1>
+        <p>{user.email}</p>
+
+        {message && <div className={styles.success}>{message}</div>}
+        {error && <div className={styles.error}>{error}</div>}
+
+        <form onSubmit={handleSubmit} className={styles.form}>
+          <div className={styles.formGroup}>
+            <label>Nombre</label>
+            <input type="text" value={user.name} disabled />
+          </div>
+
+          <div className={styles.formGroup}>
+            <label htmlFor="lastName">Apellido</label>
             <input
               type="text"
+              id="lastName"
               name="lastName"
               value={formData.lastName}
               onChange={handleChange}
-              placeholder="Tu apellido"
+              placeholder="Apellido (opcional)"
             />
           </div>
-          <div className={styles.inputGroup}>
-            <label>Teléfono</label>
+
+          <div className={styles.formGroup}>
+            <label htmlFor="phone">Teléfono</label>
             <input
-              type="text"
+              type="tel"
+              id="phone"
               name="phone"
               value={formData.phone}
               onChange={handleChange}
-              placeholder="+34 600 000 000"
+              placeholder="+123456789"
             />
           </div>
-          <div className={styles.inputGroup}>
-            <label>Fecha de nacimiento</label>
+
+          <div className={styles.formGroup}>
+            <label htmlFor="birthDate">Fecha de nacimiento</label>
             <input
               type="date"
+              id="birthDate"
               name="birthDate"
               value={formData.birthDate}
               onChange={handleChange}
             />
           </div>
-          {message && <div className={styles.message}>{message}</div>}
-          <button type="submit" className={styles.button}>Actualizar perfil</button>
+
+          <div className={styles.formGroup}>
+            <label htmlFor="vehicleModel">Modelo de vehículo</label>
+            <input
+              type="text"
+              id="vehicleModel"
+              name="vehicleModel"
+              value={formData.vehicleModel}
+              onChange={handleChange}
+              placeholder="Ej: Toyota Corolla"
+            />
+          </div>
+
+          <div className={styles.formGroup}>
+            <label htmlFor="vehiclePlate">Placa</label>
+            <input
+              type="text"
+              id="vehiclePlate"
+              name="vehiclePlate"
+              value={formData.vehiclePlate}
+              onChange={handleChange}
+              placeholder="ABC-1234"
+            />
+          </div>
+
+          <button type="submit" className={styles.submitBtn} disabled={loading}>
+            {loading ? 'Guardando...' : 'Guardar cambios'}
+          </button>
         </form>
-        <button onClick={logout} className={styles.logoutButton}>Cerrar sesión</button>
+
+        <button onClick={logout} className={styles.logoutBtn}>
+          Cerrar sesión
+        </button>
       </div>
     </div>
   );
-};
-
-export default Profile;
+}
